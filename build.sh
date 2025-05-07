@@ -75,12 +75,12 @@ if [[ $KSU != "None" ]]; then
     log "Installing KernelSU..."
 
     case "$KSU" in
-        "Official") install_ksu tiann/KernelSU ;;
-        "Next") install_ksu rifsxd/KernelSU-Next $([[ $KSU_SUSFS == true ]] && echo next-susfs) ;;
-        "Suki") install_ksu ShirkNeko/SukiSU-Ultra $([[ $KSU_SUSFS == true ]] && echo susfs-dev) ;;
-        *) error "Invalid KSU value: $KSU" ;;
+    "Official") install_ksu tiann/KernelSU ;;
+    "Next") install_ksu rifsxd/KernelSU-Next $([[ $KSU_SUSFS == true ]] && echo next-susfs) ;;
+    "Suki") install_ksu ShirkNeko/SukiSU-Ultra $([[ $KSU_SUSFS == true ]] && echo susfs-dev) ;;
+    *) error "Invalid KSU value: $KSU" ;;
     esac
-    
+
     # Apply ksu patches
     # kata rsuntk biar modulnya gk ngilang
     for i in $workdir/ksu_patches/0001* $workdir/ksu_patches/0002*; do
@@ -200,10 +200,10 @@ fi
 # Patch SUKISU
 if [[ $KSU == "Suki" ]]; then
     mkdir -p suki && cd suki
-# Set up patch_linux
+    # Set up patch_linux
     cp $workdir/shirkneko_patches/kpm/patch_linux $(pwd)
     chmod a+x $(pwd)/patch_linux
-# Patch kernel image
+    # Patch kernel image
     cp $KERNEL_IMAGE $(pwd)/Image
     if ! sudo $(pwd)/patch_linux; then
         error "Failed to patch kernel image with SukiSU"
