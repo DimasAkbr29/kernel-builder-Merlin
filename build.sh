@@ -63,14 +63,8 @@ export PATH="$CLANG_PATH/bin:$PATH"
 # Extract clang version
 COMPILER_STRING=$(clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
 
-# Apply LineageOS maphide patch
-cd $workdir/ksrc
-log "Applying LineageOS maphide patch..."
-if ! patch -p1 <$workdir/shirkneko_patches/69_hide_stuff.patch; then
-    error "Failed to apply LineageOS maphide patch."
-fi
-
 # Install KernelSU
+cd $workdir/ksrc
 if [[ $KSU != "None" ]]; then
     log "Installing KernelSU..."
 
@@ -83,7 +77,7 @@ if [[ $KSU != "None" ]]; then
 
     # Apply ksu patches
     # kata rsuntk biar modulnya gk ngilang
-    for i in $workdir/ksu_patches/0001* $workdir/ksu_patches/0002*; do
+    for i in $workdir/ksu_patches/0002* $workdir/ksu_patches/0003*; do
         if ! patch -p1 <$i; then
             error "Failed to apply $(basename $i)"
         fi
@@ -96,8 +90,8 @@ if [[ $KSU_MANUAL_HOOK == "true" ]]; then
     config --disable CONFIG_KSU_WITH_KPROBE
     config --disable CONFIG_KSU_SUSFS_SUS_SU
 
-    if ! patch -p1 <$workdir/ksu_patches/0003*; then
-        error "Failed to apply $(basename $workdir/ksu_patches/0003*)"
+    if ! patch -p1 <$workdir/ksu_patches/0001*; then
+        error "Failed to apply $(basename $workdir/ksu_patches/0001*)"
     fi
 fi
 

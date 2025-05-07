@@ -1,11 +1,9 @@
-From 906540a9efbbfe159c94f6d274c1c78c31d63752 Mon Sep 17 00:00:00 2001
-From: RyuujiX <saputradenny712@gmail.com>
-Date: Mon, 27 Feb 2023 10:42:07 +0700
-Subject: [PATCH 2/3] selinux: hooks: Remove `static inline` at `current_sid`
+From 35acf3d707f9583498d371bd85c9e089d860d20d Mon Sep 17 00:00:00 2001
+From: xSlazharx <creamylofly@gmail.com>
+Date: Wed, 7 May 2025 14:41:51 +0000
+Subject: [PATCH 3/3] selinux: hooks: Remove `static inline` at `current_sid`
 
-* Ref: https://github.com/F-19-F/android_kernel_oneplus_msm8998/commit/2993524f2fe7fbd2eea28883ec9f36e86de50f85#diff-798a64f5b6674cae172dc9699756a73dc22ee04529390eed34f6acf3c5453c08L217
-
-Signed-off-by: RyuujiX <saputradenny712@gmail.com>
+Signed-off-by: xSlazharx <creamylofly@gmail.com>
 ---
  security/selinux/hooks.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

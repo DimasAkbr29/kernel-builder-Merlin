@@ -1,7 +1,7 @@
-From 00612e33aea66dc1714ce0a0672698b8d02ddcac Mon Sep 17 00:00:00 2001
+From ed954a7b24a82f9700fc7875e0aa14baf7411296 Mon Sep 17 00:00:00 2001
 From: backslashxx <118538522+backslashxx@users.noreply.github.com>
 Date: Sat, 22 Feb 2025 22:37:25 +0800
-Subject: [PATCH 3/3] KernelSU: integrate scope-minimized manual hooks
+Subject: [PATCH 1/3] KernelSU: integrate scope-minimized manual hooks
 
 This refactors original KSU hooks to replace deep kernel function hooks with targeted hooks.
 This backports KernelSU pr#1657 and having pr#2084 elements (32-bit sucompat).
