@@ -107,6 +107,7 @@ if [[ $KSU_SUSFS == "true" ]]; then
     if ! patch -p1 <$workdir/susfs_patches/0001*; then
         error "Failed to apply kernel-side susfs patch"
     fi
+    SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
     # Apply patch to KernelSU (KSU Side)
     if [[ $KSU == "Official" ]]; then
