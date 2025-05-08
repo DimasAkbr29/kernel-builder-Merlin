@@ -9,9 +9,9 @@ source $workdir/functions.sh
 # Set up timezone
 sudo timedatectl set-timezone "$TIMEZONE"
 
-# Clone kernel patches
+# Clone patches
 SHIRKNEKO_PATCHES=https://github.com/ShirkNeko/SukiSU_patch
-log "Cloning kernel patches from $(simplify_gh_url "$SHIRKNEKO_PATCHES")"
+log "Cloning patches from $(simplify_gh_url "$SHIRKNEKO_PATCHES")"
 git clone -q --depth=1 $SHIRKNEKO_PATCHES $workdir/shirkneko_patches
 
 # Clone kernel source
@@ -21,6 +21,7 @@ git clone -q --depth=1 $KERNEL_REPO -b $KERNEL_BRANCH $workdir/ksrc
 cd $workdir/ksrc
 LINUX_VERSION=$(make kernelversion)
 DEFCONFIG_FILE=$(find $workdir/ksrc/arch/${KERNEL_ARCH}/configs -name "$KERNEL_DEFCONFIG")
+cd $workdir
 
 # Set KernelSU variant
 log "Setting KernelSU variant..."
@@ -38,7 +39,6 @@ ZIP_NAME=${ZIP_NAME//VARIANT/$VARIANT}
 ZIP_NAME=${ZIP_NAME//CODENAME/$DEVICE_CODENAME}
 
 # Download Clang
-cd $workdir
 CLANG_PATH="$workdir/clang"
 
 log "🔽 Downloading Clang..."
@@ -63,8 +63,8 @@ export PATH="$CLANG_PATH/bin:$PATH"
 # Extract clang version
 COMPILER_STRING=$(clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
 
-# Install KernelSU
 cd $workdir/ksrc
+# Install KernelSU
 if [[ $KSU != "None" ]]; then
     log "Installing KernelSU..."
 
@@ -77,6 +77,7 @@ if [[ $KSU != "None" ]]; then
 
     # Apply ksu patches
     # kata rsuntk biar modulnya gk ngilang
+    log "Applying KSU Patches for 4.9 Kernel"
     for i in $workdir/ksu_patches/0002* $workdir/ksu_patches/0003*; do
         if ! patch -p1 <$i; then
             error "Failed to apply $(basename $i)"
@@ -90,8 +91,9 @@ if [[ $KSU_MANUAL_HOOK == "true" ]]; then
     config --disable CONFIG_KSU_WITH_KPROBE
     config --disable CONFIG_KSU_SUSFS_SUS_SU
 
+    log "Applying KSU Manual Hooks patch..."
     if ! patch -p1 <$workdir/ksu_patches/0001*; then
-        error "Failed to apply $(basename $workdir/ksu_patches/0001*)"
+        error "Failed to apply KSU Manual Hooks patch."
     fi
 fi
 
@@ -101,26 +103,17 @@ if [[ $KSU_SUSFS == "true" ]]; then
     git clone -q --depth=1 https://gitlab.com/simonpunk/susfs4ksu -b kernel-4.9 $workdir/susfs4ksu
     SUSFS_PATCHES="$workdir/susfs4ksu/kernel_patches"
 
-    # Copy susfs files (Kernel Side)
-    log "Copying susfs files..."
-    cd $workdir/ksrc
-    cp $SUSFS_PATCHES/include/linux/* ./include/linux/
-    cp $SUSFS_PATCHES/fs/* ./fs/
-    SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
-
-    # Apply kernel-side susfs patch
-    log "Patching kernel-side susfs patch"
-    patch -p1 <"$SUSFS_PATCHES/50_add_susfs_in_kernel-4.9.patch" || error "Failed to apply kernel-side susfs patch"
+    log "Applying kernel-side susfs patch"
+    patch -p1 <"$workdir/susfs_patches/*" || error "Failed to apply kernel-side susfs patch"
 
     # Apply patch to KernelSU (KSU Side)
     if [[ $KSU == "Official" ]]; then
-        cd $workdir/KernelSU
+        cd $workdir/ksrc/KernelSU
         log "Applying KernelSU-side susfs patch"
         patch -p1 <$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || error "Failed to apply KernelSU-side susfs patch"
     fi
 fi
 
-cd $workdir/ksrc
 # set localversion
 if [[ $TODO == "kernel" ]]; then
     COMMIT_HASH=$(git rev-parse --short HEAD)
@@ -156,18 +149,26 @@ MESSAGE_ID=$(send_msg "$text" 2>&1 | jq -r .result.message_id)
 
 # Define make args
 MAKE_ARGS="
--j$(nproc --all)
 ARCH=$KERNEL_ARCH
-LLVM=1
-LLVM_IAS=1
-O=$workdir/out
-CROSS_COMPILE=aarch64-linux-gnu-
-CROSS_COMPILE_ARM32=arm-linux-gnu-
+SUBARCH=$KERNEL_ARCH
+LLVM=1 
+LLVM_IAS=1 
+CC=clang
+AS=clang 
+AR=llvm-ar 
+NM=llvm-nm 
+LD=ld.lld 
+OBJCOPY=llvm-objcopy 
+OBJDUMP=llvm-objdump 
+STRIP=llvm-strip 
+CLANG_TRIPLE=aarch64-linux-gnu- 
+CROSS_COMPILE=aarch64-linux-gnu- 
+CROSS_COMPILE_ARM32=arm-linux-gnueabi- 
+CROSS_COMPILE_COMPAT=arm-linux-gnueabi- 
 "
 KERNEL_IMAGE=$workdir/out/arch/$KERNEL_ARCH/boot/Image.gz-dtb
 
 ## Build Kernel
-cd $workdir/ksrc
 set +e
 
 log "Generating config..."
