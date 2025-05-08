@@ -155,24 +155,26 @@ MESSAGE_ID=$(send_msg "$text" 2>&1 | jq -r .result.message_id)
 
 # Define make args
 MAKE_ARGS="
+-j$(nproc --all)
+O=out
 ARCH=$KERNEL_ARCH
 SUBARCH=$KERNEL_ARCH
-LLVM=1 
-LLVM_IAS=1 
+LLVM=1
+LLVM_IAS=1
 CC=clang
-AS=clang 
-AR=llvm-ar 
-NM=llvm-nm 
-LD=ld.lld 
-OBJCOPY=llvm-objcopy 
-OBJDUMP=llvm-objdump 
-STRIP=llvm-strip 
-CLANG_TRIPLE=aarch64-linux-gnu- 
-CROSS_COMPILE=aarch64-linux-gnu- 
-CROSS_COMPILE_ARM32=arm-linux-gnueabi- 
-CROSS_COMPILE_COMPAT=arm-linux-gnueabi- 
+AS=clang
+AR=llvm-ar
+NM=llvm-nm
+LD=ld.lld
+OBJCOPY=llvm-objcopy
+OBJDUMP=llvm-objdump
+STRIP=llvm-strip
+CLANG_TRIPLE=aarch64-linux-gnu-
+CROSS_COMPILE=aarch64-linux-gnu-
+CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
 "
-KERNEL_IMAGE=$workdir/out/arch/$KERNEL_ARCH/boot/Image.gz-dtb
+KERNEL_IMAGE=$workdir/ksrc/out/arch/$KERNEL_ARCH/boot/Image.gz-dtb
 
 ## Build Kernel
 set +e
@@ -183,7 +185,7 @@ make $MAKE_ARGS $KERNEL_DEFCONFIG
 # Upload config file
 if [[ $TODO == "defconfig" ]]; then
     log "Uploading defconfig..."
-    upload_file $workdir/out/.config
+    upload_file $workdir/ksrc/out/.config
     exit 0
 fi
 
