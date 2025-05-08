@@ -104,16 +104,21 @@ if [[ $KSU_SUSFS == "true" ]]; then
     SUSFS_PATCHES="$workdir/susfs4ksu/kernel_patches"
 
     log "Applying kernel-side susfs patch"
-    patch -p1 <"$workdir/susfs_patches/*" || error "Failed to apply kernel-side susfs patch"
+    if ! patch -p1 <$workdir/susfs_patches/0001*; then
+        error "Failed to apply kernel-side susfs patch"
+    fi
 
     # Apply patch to KernelSU (KSU Side)
     if [[ $KSU == "Official" ]]; then
         cd $workdir/ksrc/KernelSU
         log "Applying KernelSU-side susfs patch"
-        patch -p1 <$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || error "Failed to apply KernelSU-side susfs patch"
+        if ! patch -p1 <$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch; then
+            error "Failed to apply KernelSU-side susfs patch"
+        fi
     fi
 fi
 
+cd $workdir/ksrc
 # set localversion
 if [[ $TODO == "kernel" ]]; then
     COMMIT_HASH=$(git rev-parse --short HEAD)
