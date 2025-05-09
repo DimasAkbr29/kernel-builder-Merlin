@@ -139,6 +139,8 @@ export KBUILD_BUILD_USER="$BUILD_USER"
 export KBUILD_BUILD_HOST="$BUILD_HOST"
 export KBUILD_BUILD_TIMESTAMP=$(date)
 
+export BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
+
 text=$(
     cat <<EOF
 *=== $KERNEL_NAME CI ===*
@@ -150,7 +152,6 @@ text=$(
 🔰 *Compiler*: \`$COMPILER_STRING\`
 EOF
 )
-
 MESSAGE_ID=$(send_msg "$text" 2>&1 | jq -r .result.message_id)
 
 # Define make args
@@ -175,6 +176,9 @@ CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
 "
 KERNEL_IMAGE=$workdir/ksrc/out/arch/$KERNEL_ARCH/boot/Image.gz-dtb
+
+# Set Build date in zip name
+ZIP_NAME=${ZIP_NAME//BUILD_DATE/$BUILD_DATE}
 
 ## Build Kernel
 set +e
