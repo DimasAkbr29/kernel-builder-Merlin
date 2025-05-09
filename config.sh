@@ -17,7 +17,7 @@ KERNEL_DEFCONFIG="onclite-perf_defconfig"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 ANYKERNEL_BRANCH="onclite"
 #
-CLANG_URL="https://gitlab.com/Panchajanya1999/azure-clang.git"
-CLANG_BRANCH="main"
+CLANG_URL="https://gitlab.com/LeCmnGend/clang.git"
+CLANG_BRANCH="clang-15"
 #
 ZIP_NAME="$KERNEL_NAME-KVER-CODENAME-VARIANT-BUILD_DATE.zip"
