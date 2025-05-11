@@ -18,6 +18,6 @@ ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 ANYKERNEL_BRANCH="onclite"
 #
 CLANG_URL="https://gitlab.com/LeCmnGend/clang.git"
-CLANG_BRANCH="clang-15"
+CLANG_BRANCH="clang-17"
 #
 ZIP_NAME="$KERNEL_NAME-KVER-CODENAME-VARIANT-BUILD_DATE.zip"
