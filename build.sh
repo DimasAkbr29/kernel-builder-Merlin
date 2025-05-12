@@ -10,9 +10,9 @@ source $workdir/functions.sh
 sudo timedatectl set-timezone "$TIMEZONE"
 
 # # Clone patches
-#SHIRKNEKO_PATCHES=https://github.com/ShirkNeko/SukiSU_patch
-#log "Cloning patches from $(simplify_gh_url "$SHIRKNEKO_PATCHES")"
-#git clone -q --depth=1 $SHIRKNEKO_PATCHES $workdir/shirkneko_patches
+SHIRKNEKO_PATCHES=https://github.com/ShirkNeko/SukiSU_patch
+log "Cloning patches from $(simplify_gh_url "$SHIRKNEKO_PATCHES")"
+git clone -q --depth=1 $SHIRKNEKO_PATCHES $workdir/shirkneko_patches
 
 # Clone kernel source
 log "Cloning kernel source from $(simplify_gh_url "$KERNEL_REPO")"
@@ -125,10 +125,10 @@ if [[ $TODO == "kernel" ]]; then
     COMMIT_HASH=$(git rev-parse --short HEAD)
     config --set-str CONFIG_LOCALVERSION "-$KERNEL_NAME/$COMMIT_HASH"
 fi
-# # Enable KPM Supports for SukiSU
-#if [[ $KSU == "Suki" ]]; then
-#    config --enable CONFIG_KPM
-#fi
+# Enable KPM Supports for SukiSU
+if [[ $KSU == "Suki" ]]; then
+    config --enable CONFIG_KPM
+fi
 # Disable SuSFS Logging
 if [[ $KSU_SUSFS == "true" ]]; then
     config --disable CONFIG_KSU_SUSFS_ENABLE_LOG
@@ -205,19 +205,20 @@ if [[ ! -f $KERNEL_IMAGE ]] || [[ $retVal -ne 0 ]]; then
 fi
 
 # Patch SUKISU
-#if [[ $KSU == "Suki" ]]; then
-#    mkdir -p suki && cd suki
-#    # Set up patch_linux
-#    cp $workdir/shirkneko_patches/kpm/patch_linux $(pwd)
-#    chmod a+x $(pwd)/patch_linux
-#    # Patch kernel image
-#    cp $KERNEL_IMAGE $(pwd)/Image
-#    if ! sudo $(pwd)/patch_linux; then
-#        error "Failed to patch kernel image with SukiSU"
-#    fi
-#    mv oImage $(basename $KERNEL_IMAGE)
-#    KERNEL_IMAGE=$(pwd)/$(basename $KERNEL_IMAGE)
-#fi
+if [[ $KSU == "Suki" ]]; then
+    mkdir -p sukisu-patch && cd sukisu-patch
+    # Set up patch_linux
+    cp $workdir/shirkneko_patches/kpm/patch_linux .
+    chmod a+x ./patch_linux
+    # Patch kernel image
+    cp $(dirname $KERNEL_IMAGE)/Image ./Image
+    cp $(dirname $KERNEL_IMAGE)/dts/qcom/*.dtb .
+    sudo ./patch_linux || error "Failed to patch the kernel image with SukiSU"
+    mv oImage Image
+    gzip -n -f -9 -k Image Image.gz
+    cat Image.gz *.dtb >Image.gz-dtb
+    KERNEL_IMAGE=$(pwd)/$(basename $KERNEL_IMAGE)
+fi
 
 cd $workdir
 
