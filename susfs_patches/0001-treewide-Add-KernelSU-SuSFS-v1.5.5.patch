@@ -1,9 +1,7 @@
-From 92b95b24e0fd6c00eeca6395abaf5cbb63f9af40 Mon Sep 17 00:00:00 2001
+From 3dc8c9f308e2c822e81a4d15279f0660181acb4f Mon Sep 17 00:00:00 2001
 From: xSlazharx <creamylofly@gmail.com>
-Date: Thu, 8 May 2025 08:54:29 +0000
+Date: Mon, 12 May 2025 01:12:15 +0000
 Subject: [PATCH] treewide: Add KernelSU SuSFS v1.5.5
-
-* from https://gitlab.com/simonpunk/susfs4ksu/tree/kernel-4.9
 
 Signed-off-by: xSlazharx <creamylofly@gmail.com>
 ---
@@ -40,7 +38,7 @@ Signed-off-by: xSlazharx <creamylofly@gmail.com>
  create mode 100644 include/linux/susfs_def.h
 
 diff --git a/fs/Makefile b/fs/Makefile
-index 3cfd698bbdc8..5b4103c39ced 100644
+index 6c1f25536b27..6d1b760554cc 100644
 --- a/fs/Makefile
 +++ b/fs/Makefile
 @@ -13,6 +13,8 @@ obj-y :=	open.o read_write.o file_table.o super.o \
@@ -354,10 +352,10 @@ index e8537d462a6f..10b206e886d7 100644
  	return filp;
  }
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 66238fcccc1b..9a846221fcba 100644
+index 8be8767be9b2..40de9a26fb73 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -25,9 +25,38 @@
+@@ -24,9 +24,38 @@
  #include <linux/magic.h>
  #include <linux/bootmem.h>
  #include <linux/task_work.h>
@@ -396,7 +394,7 @@ index 66238fcccc1b..9a846221fcba 100644
  /* Maximum number of mounts in a mount namespace */
  unsigned int sysctl_mount_max __read_mostly = 100000;
  
-@@ -97,6 +126,25 @@ static inline struct hlist_head *mp_hash(struct dentry *dentry)
+@@ -96,6 +125,25 @@ static inline struct hlist_head *mp_hash(struct dentry *dentry)
  	return &mountpoint_hashtable[tmp & mp_hash_mask];
  }
  
@@ -422,7 +420,7 @@ index 66238fcccc1b..9a846221fcba 100644
  /*
   * allocation is serialized by namespace_sem, but we need the spinlock to
   * serialize with freeing.
-@@ -121,6 +169,35 @@ static int mnt_alloc_id(struct mount *mnt)
+@@ -120,6 +168,35 @@ static int mnt_alloc_id(struct mount *mnt)
  static void mnt_free_id(struct mount *mnt)
  {
  	int id = mnt->mnt_id;
@@ -458,7 +456,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	spin_lock(&mnt_id_lock);
  	ida_remove(&mnt_id_ida, id);
  	if (mnt_id_start > id)
-@@ -137,6 +214,19 @@ static int mnt_alloc_group_id(struct mount *mnt)
+@@ -136,6 +213,19 @@ static int mnt_alloc_group_id(struct mount *mnt)
  {
  	int res;
  
@@ -478,7 +476,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	if (!ida_pre_get(&mnt_group_ida, GFP_KERNEL))
  		return -ENOMEM;
  
-@@ -155,6 +245,17 @@ static int mnt_alloc_group_id(struct mount *mnt)
+@@ -154,6 +244,17 @@ static int mnt_alloc_group_id(struct mount *mnt)
  void mnt_release_group_id(struct mount *mnt)
  {
  	int id = mnt->mnt_group_id;
@@ -496,7 +494,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	ida_remove(&mnt_group_ida, id);
  	if (mnt_group_start > id)
  		mnt_group_start = id;
-@@ -202,13 +303,31 @@ static void drop_mountpoint(struct fs_pin *p)
+@@ -201,13 +302,31 @@ static void drop_mountpoint(struct fs_pin *p)
  	mntput(&m->mnt);
  }
  
@@ -528,7 +526,7 @@ index 66238fcccc1b..9a846221fcba 100644
  		if (err)
  			goto out_free_cache;
  
-@@ -983,7 +1102,17 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
+@@ -982,7 +1101,17 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
  	if (!type)
  		return ERR_PTR(-ENODEV);
  
@@ -546,7 +544,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	if (!mnt)
  		return ERR_PTR(-ENOMEM);
  
-@@ -1009,6 +1138,15 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
+@@ -1008,6 +1137,15 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
  	mnt->mnt.mnt_sb = root->d_sb;
  	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
  	mnt->mnt_parent = mnt;
@@ -562,7 +560,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	lock_mount_hash();
  	list_add_tail(&mnt->mnt_instance, &root->d_sb->s_mounts);
  	unlock_mount_hash();
-@@ -1037,8 +1175,52 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+@@ -1036,8 +1174,52 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  	struct super_block *sb = old->mnt.mnt_sb;
  	struct mount *mnt;
  	int err;
@@ -616,7 +614,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	if (!mnt)
  		return ERR_PTR(-ENOMEM);
  
-@@ -1090,6 +1272,15 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+@@ -1089,6 +1271,15 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  	mnt->mnt.mnt_root = dget(root);
  	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
  	mnt->mnt_parent = mnt;
@@ -632,7 +630,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	lock_mount_hash();
  	list_add_tail(&mnt->mnt_instance, &sb->s_mounts);
  	unlock_mount_hash();
-@@ -2370,6 +2561,27 @@ static int do_loopback(struct path *path, const char *old_name,
+@@ -2337,6 +2528,27 @@ static int do_loopback(struct path *path, const char *old_name,
  		umount_tree(mnt, UMOUNT_SYNC);
  		unlock_mount_hash();
  	}
@@ -660,7 +658,7 @@ index 66238fcccc1b..9a846221fcba 100644
  out2:
  	unlock_mount(mp);
  out:
-@@ -2958,6 +3170,15 @@ long do_mount(const char *dev_name, const char __user *dir_name,
+@@ -2925,6 +3137,15 @@ long do_mount(const char *dev_name, const char __user *dir_name,
  	else
  		retval = do_new_mount(&path, type_page, flags, mnt_flags,
  				      dev_name, data_page);
@@ -676,7 +674,7 @@ index 66238fcccc1b..9a846221fcba 100644
  dput_out:
  	path_put(&path);
  	return retval;
-@@ -3035,6 +3256,10 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+@@ -3002,6 +3223,10 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  	struct mount *old;
  	struct mount *new;
  	int copy_flags;
@@ -687,7 +685,7 @@ index 66238fcccc1b..9a846221fcba 100644
  
  	BUG_ON(!ns);
  
-@@ -3054,6 +3279,14 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+@@ -3021,6 +3246,14 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  	copy_flags = CL_COPY_UNBINDABLE | CL_EXPIRE;
  	if (user_ns != ns->user_ns)
  		copy_flags |= CL_SHARED_TO_SLAVE | CL_UNPRIVILEGED;
@@ -702,7 +700,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
  	if (IS_ERR(new)) {
  		namespace_unlock();
-@@ -3090,6 +3323,29 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+@@ -3057,6 +3290,29 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  		while (p->mnt.mnt_root != q->mnt.mnt_root)
  			p = next_mnt(p, old);
  	}
@@ -732,7 +730,7 @@ index 66238fcccc1b..9a846221fcba 100644
  	namespace_unlock();
  
  	if (rootmnt)
-@@ -3630,3 +3886,37 @@ const struct proc_ns_operations mntns_operations = {
+@@ -3597,3 +3853,37 @@ const struct proc_ns_operations mntns_operations = {
  	.install	= mntns_install,
  	.owner		= mntns_owner,
  };
@@ -967,22 +965,17 @@ index ae1b42489ddd..fccaace89860 100644
  
  	err = vfs_statfs(&path, buf);
 diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
-index 57d2d15e88bc..2a196d72d185 100644
+index cbd82dff7e81..872b5c88701c 100644
 --- a/fs/proc/cmdline.c
 +++ b/fs/proc/cmdline.c
-@@ -6,6 +6,10 @@
- #include <asm/setup.h>
- #endif
+@@ -3,8 +3,18 @@
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
  
 +#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
 +extern int susfs_spoof_cmdline_or_bootconfig(struct seq_file *m);
 +#endif
 +
- #ifdef CONFIG_INITRAMFS_IGNORE_SKIP_FLAG
- #define INITRAMFS_STR_FIND "skip_initramf"
- #define INITRAMFS_STR_REPLACE "want_initramf"
-@@ -28,6 +32,12 @@ static void proc_command_line_init(void) {
- 
  static int cmdline_proc_show(struct seq_file *m, void *v)
  {
 +#ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
@@ -991,9 +984,9 @@ index 57d2d15e88bc..2a196d72d185 100644
 +		return 0;
 +	}
 +#endif
- #ifdef CONFIG_INITRAMFS_IGNORE_SKIP_FLAG
- 	seq_printf(m, "%s\n", proc_command_line);
- #else
+ 	seq_printf(m, "%s\n", saved_command_line);
+ 	return 0;
+ }
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
 index 4274f83bf100..2489e8e0e735 100644
 --- a/fs/proc/fd.c
@@ -2697,7 +2690,7 @@ index a0c3365c884b..0284103451dd 100644
  }
  
 diff --git a/kernel/sys.c b/kernel/sys.c
-index d5cafeb15c14..11af37bc1699 100644
+index a7f823224546..1ef67d24c884 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -1143,12 +1143,18 @@ static int override_release(char __user *release, size_t len)
