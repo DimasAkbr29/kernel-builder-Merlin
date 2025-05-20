@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 
 #
-DEVICE_CODENAME="onclite"
-DEVICE_MODEL="Redmi 7"
+DEVICE_CODENAME="merlin"
+DEVICE_MODEL="Redmi Note 9"
 #
-BUILD_USER="eraselk"
-BUILD_HOST="gacorprjkt"
-TIMEZONE="Asia/Makassar"
+BUILD_USER="Dimz"
+BUILD_HOST="Phoneix"
+TIMEZONE="Asia/Jakarta"
 #
-KERNEL_NAME="QuartiX"
+KERNEL_NAME="Phoneix"
 KERNEL_ARCH="arm64"
-KERNEL_REPO="https://github.com/linastorvaldz/android_kernel_xiaomi_onclite"
-KERNEL_BRANCH="master"
-KERNEL_DEFCONFIG="onclite-perf_defconfig"
+KERNEL_REPO="https://github.com/linastorvaldz/kernel_xiaomi_mt6768_Phoneix"
+KERNEL_BRANCH="stable"
+KERNEL_DEFCONFIG="merlin_defconfig"
 #
-ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-ANYKERNEL_BRANCH="onclite"
+ANYKERNEL_REPO="https://github.com/DimasAkbr29/AnyKernel"
+ANYKERNEL_BRANCH="main"
 #
-CLANG_URL="https://gitlab.com/LeCmnGend/clang.git"
-CLANG_BRANCH="clang-17"
+CLANG_URL="$(./clang.sh aosp)"
+CLANG_BRANCH=""
 #
 ZIP_NAME="$KERNEL_NAME-KVER-CODENAME-VARIANT-BUILD_DATE.zip"

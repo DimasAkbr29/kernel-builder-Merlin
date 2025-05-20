@@ -1,14 +1,14 @@
-From ed954a7b24a82f9700fc7875e0aa14baf7411296 Mon Sep 17 00:00:00 2001
+From 039256b99f5883be29dc3ca3b1345316a8472b8d Mon Sep 17 00:00:00 2001
 From: backslashxx <118538522+backslashxx@users.noreply.github.com>
-Date: Sat, 22 Feb 2025 22:37:25 +0800
-Subject: [PATCH 1/3] KernelSU: integrate scope-minimized manual hooks
+Date: Sat, 22 Feb 2025 22:53:48 +0800
+Subject: [PATCH 1/2] KernelSU: integrate scope-minimized manual hooks
 
 This refactors original KSU hooks to replace deep kernel function hooks with targeted hooks.
 This backports KernelSU pr#1657 and having pr#2084 elements (32-bit sucompat).
 It reduces the scope of kernel function interception and still maintains full fucntionality.
 
 This commit is a squash of the following:
-*	fs/exec: do_execve: ksu_handle_execveat hook
+*	fs/exec: do_execve: ksu_handle_execveat_ksud/sucompat hook
 *	fs/exec: compat_do_execve: ksu_handle_execveat_sucompat hook
 	fs/open: sys_faccessat: ksu_handle_faccessat hook
 *	fs/read_write: sys_read: ksu_handle_sys_read hook
@@ -25,16 +25,16 @@ Signed-off-by: backslashxx <118538522+backslashxx@users.noreply.github.com>
  drivers/input/input.c | 10 ++++++++++
  drivers/tty/pty.c     |  7 +++++++
  fs/exec.c             | 18 ++++++++++++++++++
- fs/open.c             |  9 +++++++++
+ fs/open.c             |  3 +--
  fs/read_write.c       | 10 ++++++++++
- fs/stat.c             | 12 ++++++++++++
- 6 files changed, 66 insertions(+)
+ fs/stat.c             | 10 ++++++++++
+ 6 files changed, 56 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/input/input.c b/drivers/input/input.c
-index 378717d1b3b4..aea96c0a1158 100644
+index bc6fa610e77a..c12d23fbe6ed 100644
 --- a/drivers/input/input.c
 +++ b/drivers/input/input.c
-@@ -436,11 +436,21 @@ static void input_handle_event(struct input_dev *dev,
+@@ -444,11 +444,21 @@ static void input_handle_event(struct input_dev *dev,
   * to 'seed' initial state of a switch or initial position of absolute
   * axis, etc.
   */
@@ -57,10 +57,10 @@ index 378717d1b3b4..aea96c0a1158 100644
  
  		spin_lock_irqsave(&dev->event_lock, flags);
 diff --git a/drivers/tty/pty.c b/drivers/tty/pty.c
-index f13f2535cc85..b2e3181110e1 100644
+index 467f401abd29..c5eb3b7ded79 100644
 --- a/drivers/tty/pty.c
 +++ b/drivers/tty/pty.c
-@@ -627,11 +627,18 @@ static struct tty_struct *ptm_unix98_lookup(struct tty_driver *driver,
+@@ -711,11 +711,18 @@ static struct tty_struct *ptm_unix98_lookup(struct tty_driver *driver,
   *	This provides our locking for the tty pointer.
   */
  
@@ -80,10 +80,10 @@ index f13f2535cc85..b2e3181110e1 100644
  	tty = devpts_get_priv(file->f_path.dentry);
  	mutex_unlock(&devpts_mutex);
 diff --git a/fs/exec.c b/fs/exec.c
-index 5addf3b00561..8b9c560acc7a 100644
+index 2e9de8ca5065..ccc492708750 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
-@@ -1837,12 +1837,26 @@ static int do_execveat_common(int fd, struct filename *filename,
+@@ -1905,12 +1905,26 @@ static int do_execveat_common(int fd, struct filename *filename,
  	return retval;
  }
  
@@ -110,49 +110,38 @@ index 5addf3b00561..8b9c560acc7a 100644
  	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
  }
  
-@@ -1870,6 +1884,10 @@ static int compat_do_execve(struct filename *filename,
+@@ -1938,6 +1952,10 @@ static int compat_do_execve(struct filename *filename,
  		.is_compat = true,
  		.ptr.compat = __envp,
  	};
 +#ifdef CONFIG_KSU
 +	if (!ksu_execveat_hook)
-+		ksu_handle_execveat_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL); /* 32-bit support */
++		ksu_handle_execveat_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL); /* 32-bit su */
 +#endif
  	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
  }
  
 diff --git a/fs/open.c b/fs/open.c
-index f2b82c462fbb..b5129e51f69d 100644
+index 657d01987806..a1e5973e2469 100644
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -355,6 +355,11 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
+@@ -354,10 +354,9 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
  	return error;
  }
  
-+#ifdef CONFIG_KSU
-+extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
-+			 int *flags);
-+#endif
-+
+-// KernelSU hook
+ #ifdef CONFIG_KSU
+ extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
+-			        int *flags);
++			                    int *flags);
+ #endif
+ 
  /*
-  * access() needs to use the real uid/gid, not the effective uid/gid.
-  * We do this by temporarily clearing all FS-related capabilities and
-@@ -370,6 +375,10 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
- 	int res;
- 	unsigned int lookup_flags = LOOKUP_FOLLOW;
- 
-+#ifdef CONFIG_KSU
-+	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-+#endif
-+	
- 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
- 		return -EINVAL;
- 
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 901231269242..8b5c00c38e2e 100644
+index 50fe43936953..33b362979023 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
-@@ -581,12 +581,22 @@ static inline void file_pos_write(struct file *file, loff_t pos)
+@@ -578,6 +578,12 @@ static inline void file_pos_write(struct file *file, loff_t pos)
  		file->f_pos = pos;
  }
  
@@ -165,21 +154,22 @@ index 901231269242..8b5c00c38e2e 100644
  SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
  {
  	struct fd f = fdget_pos(fd);
- 	ssize_t ret = -EBADF;
+@@ -585,6 +591,10 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
  
  	if (f.file) {
+ 		loff_t pos = file_pos_read(f.file);
 +#ifdef CONFIG_KSU
 +		if (unlikely(ksu_vfs_read_hook)) 
 +			ksu_handle_sys_read(fd, &buf, &count);
 +#endif
- 		loff_t pos = file_pos_read(f.file);
  		ret = vfs_read(f.file, buf, count, &pos);
  		if (ret >= 0)
+ 			file_pos_write(f.file, pos);
 diff --git a/fs/stat.c b/fs/stat.c
-index 068fdbcc9e26..31ab7859256b 100644
+index e4cd17d7e865..f4b30981171d 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
-@@ -287,6 +287,10 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
+@@ -361,6 +361,10 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
  	return cp_new_stat(&stat, statbuf);
  }
  
@@ -190,28 +180,26 @@ index 068fdbcc9e26..31ab7859256b 100644
  #if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)
  SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
  		struct stat __user *, statbuf, int, flag)
-@@ -294,6 +298,10 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+@@ -368,6 +372,9 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
  	struct kstat stat;
  	int error;
  
 +#ifdef CONFIG_KSU
 +	ksu_handle_stat(&dfd, &filename, &flag);
 +#endif
-+
  	error = vfs_fstatat(dfd, filename, &stat, flag);
  	if (error)
  		return error;
-@@ -436,6 +444,10 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
+@@ -512,6 +519,9 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
  	struct kstat stat;
  	int error;
  
 +#ifdef CONFIG_KSU
 +	ksu_handle_stat(&dfd, &filename, &flag); /* 32-bit su support */
 +#endif
-+
  	error = vfs_fstatat(dfd, filename, &stat, flag);
  	if (error)
  		return error;
 -- 
-2.49.0
+2.34.1
 

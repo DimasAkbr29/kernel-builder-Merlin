@@ -1,4 +1,4 @@
-name: Build Kernel [onclite]
+name: Build Kernel [merlin]
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
           - "defconfig"
       KSU:
         description: KernelSU
-        default: "Suki"
+        default: "Next"
         type: choice
         options:
           - "None"

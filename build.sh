@@ -75,14 +75,6 @@ if [[ $KSU != "None" ]]; then
     *) error "Invalid KSU value: $KSU" ;;
     esac
 
-    # Apply ksu patches
-    # kata rsuntk biar modulnya gk ngilang
-    log "Applying KSU Patches for 4.9 Kernel"
-    for i in $workdir/ksu_patches/0002* $workdir/ksu_patches/0003*; do
-        if ! patch -p1 <$i; then
-            error "Failed to apply $(basename $i)"
-        fi
-    done
 fi
 
 # Apply KSU Manual Hooks patch
@@ -92,7 +84,7 @@ if [[ $KSU_MANUAL_HOOK == "true" ]]; then
     config --disable CONFIG_KSU_SUSFS_SUS_SU
 
     log "Applying KSU Manual Hooks patch..."
-    if ! patch -p1 <$workdir/ksu_patches/0001*; then
+    if ! patch -p1 <$workdir/patches/0001*; then
         error "Failed to apply KSU Manual Hooks patch."
     fi
 fi
@@ -100,11 +92,11 @@ fi
 # SUSFS for KSU setup
 if [[ $KSU_SUSFS == "true" ]]; then
     log "Cloning susfs4ksu..."
-    git clone -q --depth=1 https://gitlab.com/simonpunk/susfs4ksu -b kernel-4.9 $workdir/susfs4ksu
+    git clone -q --depth=1 https://gitlab.com/simonpunk/susfs4ksu -b kernel-4.14 $workdir/susfs4ksu
     SUSFS_PATCHES="$workdir/susfs4ksu/kernel_patches"
 
     log "Applying kernel-side susfs patch"
-    if ! patch -p1 <$workdir/susfs_patches/0001*; then
+    if ! patch -p1 <$workdir/patches/0002*; then
         error "Failed to apply kernel-side susfs patch"
     fi
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
@@ -128,10 +120,6 @@ fi
 # Enable KPM Supports for SukiSU
 if [[ $KSU == "Suki" ]]; then
     config --enable CONFIG_KPM
-fi
-# Disable SuSFS Logging
-if [[ $KSU_SUSFS == "true" ]]; then
-    config --disable CONFIG_KSU_SUSFS_ENABLE_LOG
 fi
 
 # Declare needed variables
@@ -225,18 +213,6 @@ cd $workdir
 # Clone AnyKernel
 log "Cloning anykernel from $(simplify_gh_url "$ANYKERNEL_REPO")"
 git clone -q --depth=1 $ANYKERNEL_REPO -b $ANYKERNEL_BRANCH anykernel
-
-# Set kernel string in anykernel
-#if [[ $STATUS == "BETA" ]]; then
-#    BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
-#    sed -i \
-#        "s/kernel.string=.*/kernel.string=${KERNEL_NAME} ${LINUX_VERSION} (${BUILD_DATE}) ${VARIANT}/g" \
-#        $workdir/anykernel/anykernel.sh
-#else
-#    sed -i \
-#        "s/kernel.string=.*/kernel.string=${KERNEL_NAME} ${LINUX_VERSION} ${VARIANT}/g" \
-#        $workdir/anykernel/anykernel.sh
-#fi
 
 # Zipping
 cd $workdir/anykernel
