@@ -1,6 +1,6 @@
-From 039256b99f5883be29dc3ca3b1345316a8472b8d Mon Sep 17 00:00:00 2001
-From: backslashxx <118538522+backslashxx@users.noreply.github.com>
-Date: Sat, 22 Feb 2025 22:53:48 +0800
+From 4219ec5053947ff4337bd587a1a21305728b28e8 Mon Sep 17 00:00:00 2001
+From: linastorvaldz <creamylofly@gmail.com>
+Date: Thu, 22 May 2025 10:41:12 +0000
 Subject: [PATCH 1/2] KernelSU: integrate scope-minimized manual hooks
 
 This refactors original KSU hooks to replace deep kernel function hooks with targeted hooks.
@@ -20,21 +20,21 @@ This commit is a squash of the following:
 references: KernelSU pr#1657, pr#2084
 	https://kernelsu.org/guide/how-to-integrate-for-non-gki.html
 
-Signed-off-by: backslashxx <118538522+backslashxx@users.noreply.github.com>
+Signed-off-by: linastorvaldz <creamylofly@gmail.com>
 ---
  drivers/input/input.c | 10 ++++++++++
  drivers/tty/pty.c     |  7 +++++++
- fs/exec.c             | 18 ++++++++++++++++++
- fs/open.c             |  3 +--
+ fs/exec.c             | 25 +++++++++++++++++++++++++
+ fs/open.c             |  9 +++++++++
  fs/read_write.c       | 10 ++++++++++
  fs/stat.c             | 10 ++++++++++
- 6 files changed, 56 insertions(+), 2 deletions(-)
+ 6 files changed, 71 insertions(+)
 
 diff --git a/drivers/input/input.c b/drivers/input/input.c
-index bc6fa610e77a..c12d23fbe6ed 100644
+index f9f3d6261dc5..ed015443e2f8 100644
 --- a/drivers/input/input.c
 +++ b/drivers/input/input.c
-@@ -444,11 +444,21 @@ static void input_handle_event(struct input_dev *dev,
+@@ -436,11 +436,21 @@ static void input_handle_event(struct input_dev *dev,
   * to 'seed' initial state of a switch or initial position of absolute
   * axis, etc.
   */
@@ -80,68 +80,85 @@ index 467f401abd29..c5eb3b7ded79 100644
  	tty = devpts_get_priv(file->f_path.dentry);
  	mutex_unlock(&devpts_mutex);
 diff --git a/fs/exec.c b/fs/exec.c
-index 2e9de8ca5065..ccc492708750 100644
+index ae0a49517ba9..9c0e86f0f121 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
-@@ -1905,12 +1905,26 @@ static int do_execveat_common(int fd, struct filename *filename,
- 	return retval;
+@@ -1953,11 +1953,30 @@ void set_dumpable(struct mm_struct *mm, int value)
+ 	} while (cmpxchg(&mm->flags, old, new) != old);
  }
  
 +#ifdef CONFIG_KSU
 +extern bool ksu_execveat_hook __read_mostly;
-+extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,
-+			void *envp, int *flags);
-+extern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
-+				 void *argv, void *envp, int *flags);
++extern int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
++			       void *__never_use_argv, void *__never_use_envp,
++			       int *__never_use_flags);
++extern int ksu_handle_execve_ksud(const char __user *filename_user,
++			const char __user *const __user *__argv);
++#ifdef CONFIG_COMPAT
++extern int ksu_handle_compat_execve_ksud(const char __user *filename_user,
++			const compat_uptr_t __user *__argv);
++#endif
 +#endif
 +
- int do_execve(struct filename *filename,
- 	const char __user *const __user *__argv,
- 	const char __user *const __user *__envp)
+ SYSCALL_DEFINE3(execve,
+ 		const char __user *, filename,
+ 		const char __user *const __user *, argv,
+ 		const char __user *const __user *, envp)
  {
- 	struct user_arg_ptr argv = { .ptr.native = __argv };
- 	struct user_arg_ptr envp = { .ptr.native = __envp };
 +#ifdef CONFIG_KSU
 +	if (unlikely(ksu_execveat_hook))
-+		ksu_handle_execveat((int *)AT_FDCWD, &filename, &argv, &envp, 0);
++		ksu_handle_execve_ksud(filename, argv);
 +	else
-+		ksu_handle_execveat_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
++		ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
 +#endif
- 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
+ 	return do_execve(getname(filename), argv, envp);
  }
  
-@@ -1938,6 +1952,10 @@ static int compat_do_execve(struct filename *filename,
- 		.is_compat = true,
- 		.ptr.compat = __envp,
- 	};
-+#ifdef CONFIG_KSU
-+	if (!ksu_execveat_hook)
-+		ksu_handle_execveat_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL); /* 32-bit su */
+@@ -1979,6 +1998,12 @@ COMPAT_SYSCALL_DEFINE3(execve, const char __user *, filename,
+ 	const compat_uptr_t __user *, argv,
+ 	const compat_uptr_t __user *, envp)
+ {
++#ifdef CONFIG_KSU // 32-bit ksud and 32-on-64 support
++	if (unlikely(ksu_execveat_hook))
++		ksu_handle_compat_execve_ksud(filename, argv);
++	else
++		ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
 +#endif
- 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
+ 	return compat_do_execve(getname(filename), argv, envp);
  }
  
 diff --git a/fs/open.c b/fs/open.c
-index 657d01987806..a1e5973e2469 100644
+index 3b62683fe332..81e61755fa29 100644
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -354,10 +354,9 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
+@@ -354,6 +354,11 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
  	return error;
  }
  
--// KernelSU hook
- #ifdef CONFIG_KSU
- extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
--			        int *flags);
++#ifdef CONFIG_KSU
++extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
 +			                    int *flags);
- #endif
- 
++#endif
++
  /*
+  * access() needs to use the real uid/gid, not the effective uid/gid.
+  * We do this by temporarily clearing all FS-related capabilities and
+@@ -369,6 +374,10 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ 	int res;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+ 
++#ifdef CONFIG_KSU
++	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
++#endif
++
+ 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
+ 		return -EINVAL;
+ 
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 50fe43936953..33b362979023 100644
+index 0da6e4f19d7f..aa4bae3d71b8 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
-@@ -578,6 +578,12 @@ static inline void file_pos_write(struct file *file, loff_t pos)
+@@ -568,6 +568,12 @@ static inline void file_pos_write(struct file *file, loff_t pos)
  		file->f_pos = pos;
  }
  
@@ -154,7 +171,7 @@ index 50fe43936953..33b362979023 100644
  SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
  {
  	struct fd f = fdget_pos(fd);
-@@ -585,6 +591,10 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
+@@ -575,6 +581,10 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
  
  	if (f.file) {
  		loff_t pos = file_pos_read(f.file);
@@ -166,10 +183,10 @@ index 50fe43936953..33b362979023 100644
  		if (ret >= 0)
  			file_pos_write(f.file, pos);
 diff --git a/fs/stat.c b/fs/stat.c
-index e4cd17d7e865..f4b30981171d 100644
+index 0fda4b6b8fb2..85c5a6c6f012 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
-@@ -361,6 +361,10 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
+@@ -353,6 +353,10 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
  	return cp_new_stat(&stat, statbuf);
  }
  
@@ -180,7 +197,7 @@ index e4cd17d7e865..f4b30981171d 100644
  #if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)
  SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
  		struct stat __user *, statbuf, int, flag)
-@@ -368,6 +372,9 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+@@ -360,6 +364,9 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
  	struct kstat stat;
  	int error;
  
@@ -190,7 +207,7 @@ index e4cd17d7e865..f4b30981171d 100644
  	error = vfs_fstatat(dfd, filename, &stat, flag);
  	if (error)
  		return error;
-@@ -512,6 +519,9 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
+@@ -504,6 +511,9 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
  	struct kstat stat;
  	int error;
  
