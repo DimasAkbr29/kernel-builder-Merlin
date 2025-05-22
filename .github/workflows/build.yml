@@ -40,9 +40,9 @@ jobs:
 
       - name: Validate Inputs and Secrets
         env:
-          CHAT_ID: ${{ secrets.CHAT_ID }} # telegram chat id
-          TOKEN: ${{ secrets.TOKEN }} # telegram bot token
-          GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          TOKEN: ${{ secrets.TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
@@ -89,13 +89,25 @@ jobs:
 
       - name: Run Build Script
         env:
-          CHAT_ID: ${{ secrets.CHAT_ID }} # telegram chat id
-          TOKEN: ${{ secrets.TOKEN }} # telegram bot token
-          GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          TOKEN: ${{ secrets.TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
           TODO: ${{ inputs.TODO }}
         run: |
+          echo "📡 Server Info"
+          echo "🏷️ Hostname: $(hostname)"
+          echo "🧠 CPU Info:"
+          lscpu
+          echo "💾 Memory Info:"
+          free -h
+          echo "🧱 Kernel Info:"
+          uname -a
+          echo "📦 Disk Info:"
+          df -h /
+
+          echo "⚙️ Starting build script..."
           chmod a+x *.sh
           ./build.sh
