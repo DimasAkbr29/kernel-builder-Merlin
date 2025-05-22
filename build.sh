@@ -144,7 +144,6 @@ MESSAGE_ID=$(send_msg "$text" 2>&1 | jq -r .result.message_id)
 
 # Define make args
 MAKE_ARGS="
--j$(nproc --all)
 O=out
 ARCH=$KERNEL_ARCH
 SUBARCH=$KERNEL_ARCH
@@ -163,6 +162,7 @@ CROSS_COMPILE=aarch64-linux-gnu-
 CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
 "
+
 KERNEL_IMAGE=$workdir/ksrc/out/arch/$KERNEL_ARCH/boot/Image.gz-dtb
 
 # Set Build date in zip name
