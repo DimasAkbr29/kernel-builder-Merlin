@@ -118,14 +118,11 @@ index ae0a49517ba9..9c0e86f0f121 100644
  	const compat_uptr_t __user *, argv,
  	const compat_uptr_t __user *, envp)
  {
-+#ifdef CONFIG_KSU // 32-bit ksud and 32-on-64 support
-+	if (unlikely(ksu_execveat_hook))
-+		ksu_handle_compat_execve_ksud(filename, argv);
-+	else
-+		ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
-+#endif
- 	return compat_do_execve(getname(filename), argv, envp);
- }
+
+ #ifdef CONFIG_KSU
+    ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
+#endif
+
  
 diff --git a/fs/open.c b/fs/open.c
 index 3b62683fe332..81e61755fa29 100644
