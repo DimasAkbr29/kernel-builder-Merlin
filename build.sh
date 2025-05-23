@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 workdir=$(pwd)
 exec > >(tee $workdir/build.log) 2>&1
@@ -29,7 +30,6 @@ declare -A KSU_VARIANTS=(
     ["Official"]="KSU"
     ["Next"]="KSUN"
     ["Suki"]="SUKISU"
-    ["SukiNext"]="SUKISU+KSUN"
 )
 VARIANT="${KSU_VARIANTS[$KSU]:-NKSU}"
 [[ $KSU_SUSFS == "true" ]] && VARIANT+="xSUSFS"
@@ -73,12 +73,9 @@ if [[ $KSU != "None" ]]; then
     "Official") install_ksu tiann/KernelSU ;;
     "Next") install_ksu rifsxd/KernelSU-Next $([[ $KSU_SUSFS == true ]] && echo next-susfs) ;;
     "Suki") install_ksu ShirkNeko/SukiSU-Ultra $([[ $KSU_SUSFS == true ]] && echo susfs-dev) ;;
-    "SukiNext")
-        install_ksu rifsxd/KernelSU-Next $([[ $KSU_SUSFS == true ]] && echo next-susfs)
-        install_ksu ShirkNeko/SukiSU-Ultra $([[ $KSU_SUSFS == true ]] && echo susfs-dev)
-        ;;
     *) error "Invalid KSU value: $KSU" ;;
     esac
+
 fi
 
 # Apply KSU Manual Hooks patch
@@ -106,7 +103,7 @@ if [[ $KSU_SUSFS == "true" ]]; then
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
     # Apply patch to KernelSU (KSU Side)
-    if [[ $KSU == "Official" ]] || [[ $KSU == "SukiNext" ]]; then
+    if [[ $KSU == "Official" ]]; then
         cd $workdir/ksrc/KernelSU
         log "Applying KernelSU-side susfs patch"
         if ! patch -p1 <$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch; then
@@ -122,7 +119,7 @@ if [[ $TODO == "kernel" ]]; then
     config --set-str CONFIG_LOCALVERSION "-$KERNEL_NAME/$COMMIT_HASH"
 fi
 # Enable KPM Supports for SukiSU
-if [[ $KSU == "Suki" ]] || [[ $KSU == "SukiNext" ]]; then
+if [[ $KSU == "Suki" ]]; then
     config --enable CONFIG_KPM
 fi
 
@@ -133,12 +130,13 @@ export KBUILD_BUILD_TIMESTAMP=$(date)
 
 export BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
 
-text=$(cat <<EOF
+text=$(
+    cat <<EOF
 *=== $KERNEL_NAME CI ===*
 🐧 *Linux Version*: \`$LINUX_VERSION\`
 📅 *Build Date*: \`$KBUILD_BUILD_TIMESTAMP\`
 📱 *Device*: \`$DEVICE_MODEL ($DEVICE_CODENAME)\`
-📛 *KernelSU*: \`$KSU$([[ $KSU != "None" ]] && echo " | $KSU_VERSION")\`
+📛 *KernelSU*: \`${KSU}$([[ $KSU != "None" ]] && echo " | $KSU_VERSION")\`
 ඞ *SUSFS*: \`$([[ $KSU_SUSFS == "true" ]] && echo "$SUSFS_VERSION" || echo "None")\`
 🔰 *Compiler*: \`$COMPILER_STRING\`
 EOF
@@ -147,6 +145,7 @@ MESSAGE_ID=$(send_msg "$text" 2>&1 | jq -r .result.message_id)
 
 # Define make args
 MAKE_ARGS="
+-j$(nproc --all)
 O=out
 ARCH=$KERNEL_ARCH
 SUBARCH=$KERNEL_ARCH
@@ -161,11 +160,10 @@ OBJCOPY=llvm-objcopy
 OBJDUMP=llvm-objdump
 STRIP=llvm-strip
 CLANG_TRIPLE=aarch64-linux-gnu-
-CROSS_COMPILE=aarch64-linux-android-
-CROSS_COMPILE_ARM32=arm-linux-androideabi-
-CROSS_COMPILE_COMPAT=arm-linux-androideabi-
+CROSS_COMPILE=aarch64-linux-gnu-
+CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
 "
-
 KERNEL_IMAGE=$workdir/ksrc/out/arch/$KERNEL_ARCH/boot/Image.gz-dtb
 
 # Set Build date in zip name
@@ -196,10 +194,12 @@ if [[ ! -f $KERNEL_IMAGE ]] || [[ $retVal -ne 0 ]]; then
 fi
 
 # Patch SUKISU
-if [[ $KSU == "Suki" ]] || [[ $KSU == "SukiNext" ]]; then
+if [[ $KSU == "Suki" ]]; then
     mkdir -p sukisu-patch && cd sukisu-patch
+    # Set up patch_linux
     cp $workdir/shirkneko_patches/kpm/patch_linux .
     chmod a+x ./patch_linux
+    # Patch kernel image
     cp $(dirname $KERNEL_IMAGE)/Image ./Image
     cp $(dirname $KERNEL_IMAGE)/dts/qcom/*.dtb .
     sudo ./patch_linux || error "Failed to patch the kernel image with SukiSU"
