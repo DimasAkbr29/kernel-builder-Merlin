@@ -11,7 +11,7 @@ TIMEZONE="Asia/Jakarta"
 KERNEL_NAME="Phoneix"
 KERNEL_ARCH="arm64"
 KERNEL_REPO="https://github.com/DimasAkbr29/android_kernel_xiaomi_mt6768"
-KERNEL_BRANCH="lineage-21"
+KERNEL_BRANCH="kernel-tree-wip"
 KERNEL_DEFCONFIG="merlin_defconfig"
 #
 ANYKERNEL_REPO="https://github.com/DimasAkbr29/AnyKernel"
