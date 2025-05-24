@@ -112,6 +112,9 @@ if [[ $KSU_SUSFS == "true" ]]; then
     fi
 fi
 
+curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next-susfs/kernel/setup.sh" | bash -s next-susfs
+
+
 cd $workdir/ksrc
 # set localversion
 if [[ $TODO == "kernel" ]]; then
