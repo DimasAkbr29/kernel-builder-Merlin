@@ -1,7 +1,7 @@
-From a4ca61666b64f31dcb96da0e5034caa5d33312a1 Mon Sep 17 00:00:00 2001
+From a5ec419fdd2fc9faab2df0d522db75e1817dbed5 Mon Sep 17 00:00:00 2001
 From: linastorvaldz <creamylofly@gmail.com>
-Date: Tue, 20 May 2025 08:10:07 +0000
-Subject: [PATCH 2/2] Add SUSFS v1.5.5
+Date: Thu, 22 May 2025 10:53:06 +0000
+Subject: [PATCH 2/2] treewide: Import SuSFS v1.5.5
 
 Signed-off-by: linastorvaldz <creamylofly@gmail.com>
 ---
@@ -52,7 +52,7 @@ index ea8825275b0d..048a387df2f7 100644
  obj-y +=	buffer.o block_dev.o direct-io.o mpage.o
  else
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 27a370aa83a8..206fa578b834 100644
+index 2f01b271023d..9878affeb944 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
 @@ -39,6 +39,9 @@
@@ -65,7 +65,7 @@ index 27a370aa83a8..206fa578b834 100644
  
  #include "internal.h"
  #include "mount.h"
-@@ -2226,6 +2229,11 @@ struct dentry *__d_lookup_rcu(const struct dentry *parent,
+@@ -2225,6 +2228,11 @@ struct dentry *__d_lookup_rcu(const struct dentry *parent,
  				continue;
  			if (dentry_cmp(dentry, str, hashlen_len(hashlen)) != 0)
  				continue;
@@ -77,7 +77,7 @@ index 27a370aa83a8..206fa578b834 100644
  		}
  		*seqp = seq;
  		return dentry;
-@@ -2309,6 +2317,12 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
+@@ -2308,6 +2316,12 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
  		if (dentry->d_name.hash != hash)
  			continue;
  
@@ -919,7 +919,7 @@ index b00f1a9d21ad..aac4c49f21e8 100644
  	if (IS_ERR(realfile)) {
  		kfree(od);
 diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
-index 9d3192f26cf6..3e727f94b811 100644
+index 01cd5a2cbe35..59c03f853708 100644
 --- a/fs/overlayfs/super.c
 +++ b/fs/overlayfs/super.c
 @@ -282,6 +282,18 @@ static int ovl_statfs(struct dentry *dentry, struct kstatfs *buf)
@@ -967,7 +967,7 @@ index e2244c134c9c..8746024a17ea 100644
  {
  	enum ovl_path_type type = ovl_path_type(dentry);
 diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
-index 8233e7af9389..135cdb199cee 100644
+index 403cbb12a6e9..7c3fad2cb84c 100644
 --- a/fs/proc/cmdline.c
 +++ b/fs/proc/cmdline.c
 @@ -4,8 +4,18 @@
@@ -986,9 +986,9 @@ index 8233e7af9389..135cdb199cee 100644
 +		return 0;
 +	}
 +#endif
- 	seq_puts(m, saved_command_line);
- 	seq_putc(m, '\n');
+ 	seq_printf(m, "%s\n", saved_command_line);
  	return 0;
+ }
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
 index 96fc70225e54..f5cc2d5984d7 100644
 --- a/fs/proc/fd.c
@@ -1192,7 +1192,7 @@ index e6f4c7b8884b..a2bf0ec64cc8 100644
  	if (sizeof(d_ino) < sizeof(ino) && d_ino != ino) {
  		buf->error = -EOVERFLOW;
 diff --git a/fs/stat.c b/fs/stat.c
-index f4b30981171d..77ce8c2d4dab 100644
+index 85c5a6c6f012..a37307f1fb28 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -17,6 +17,9 @@
@@ -2399,10 +2399,10 @@ index 1ff21c19b0b9..99adc5d71846 100644
  
  struct file; /* forward dec */
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 69d8e21ba67f..831b2f725bbc 100644
+index 133b950e8953..8aaf254f0456 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1404,6 +1404,10 @@ struct task_struct {
+@@ -1390,6 +1390,10 @@ struct task_struct {
  	 * New fields for task_struct should be added above here, so that
  	 * they are included in the randomized portion of task_struct.
  	 */
@@ -2713,7 +2713,7 @@ index 4ad367a05274..13371ade19ed 100644
  }
  
 diff --git a/kernel/sys.c b/kernel/sys.c
-index ee4df76582bc..ffda7cabb3f5 100644
+index fe72ebb759b9..ce2533f6ca5c 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -1185,12 +1185,19 @@ static int override_release(char __user *release, size_t len)
@@ -2733,9 +2733,9 @@ index ee4df76582bc..ffda7cabb3f5 100644
 +#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
 +	susfs_spoof_uname(&tmp);
 +#endif
- 	if (!strncmp(current->comm, "bpfloader", 9) ||
- 	    !strncmp(current->comm, "netbpfload", 10) ||
- 	    !strncmp(current->comm, "netd", 4)) {
+ 	up_read(&uts_sem);
+ 	if (copy_to_user(name, &tmp, sizeof(tmp)))
+ 		return -EFAULT;
 -- 
 2.34.1
 
