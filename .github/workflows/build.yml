@@ -36,7 +36,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Validate Inputs and Secrets
         env:
@@ -53,39 +53,45 @@ jobs:
               let ret++
           }
 
-          if [[ -z "$CHAT_ID" ]]; then
-            _error "Missing CHAT_ID secret (Telegram Chat ID)"
-          fi
-          if [[ -z "$TOKEN" ]]; then
-            _error "Missing TOKEN secret (Telegram Bot Token)"
-          fi
-          if [[ -z "$GH_TOKEN" ]]; then
-            _error "Missing GH_TOKEN secret (GitHub PAT)"
-          fi
+          if [[ -z "$CHAT_ID" ]]; then _error "Missing CHAT_ID secret (Telegram Chat ID)"; fi
+          if [[ -z "$TOKEN" ]]; then _error "Missing TOKEN secret (Telegram Bot Token)"; fi
+          if [[ -z "$GH_TOKEN" ]]; then _error "Missing GH_TOKEN secret (GitHub PAT)"; fi
+          if [[ $KSU == "None" && $KSU_SUSFS == "true" ]]; then _error "Cannot use SuSFS without KernelSU"; fi
+          if [[ $KSU == "None" && $KSU_MANUAL_HOOK == "true" ]]; then _error "Cannot use KSU Manual Hooks without KernelSU!"; fi
+          if [[ $KSU == "Official" && $KSU_MANUAL_HOOK == "true" ]]; then _error "KernelSU Official no longer supports manual hook"; fi
 
-          if [[ $KSU == "None" && $KSU_SUSFS == "true" ]]; then
-              _error "Cannot use SuSFS without KernelSU"
-          fi
-
-          if [[ $KSU == "None" && $KSU_MANUAL_HOOK == "true" ]]; then
-            _error "Cannot use KSU Manual Hooks without KernelSU!"
-          fi
-
-          if [[ $KSU == "Official" && $KSU_MANUAL_HOOK == "true" ]]; then
-              _error "KernelSU Official no longer supports manual hook"
-          fi
-
-          if [[ $ret -gt 0 ]]; then
-            exit $ret
-          fi
+          if [[ $ret -gt 0 ]]; then exit $ret; fi
 
       - name: Install Dependencies
         run: |
-          export MAN_DISABLE=true
           sudo apt update -y
           sudo apt install -y bc cpio flex bison aptitude gh git python-is-python3 \
                               tar perl wget curl lz4 zstd libarchive-tools
           sudo aptitude install -y libssl-dev
+
+      - name: Merge Kernel Upstream from OpenELA
+        if: ${{ inputs.TODO == 'kernel' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          echo "🌐 Menambahkan remote upstream..."
+          git remote add openela https://github.com/openela/kernel-lts || true
+          git fetch openela linux-4.14.y
+
+          echo "🔧 Konfigurasi identitas git..."
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+          echo "🔀 Melakukan merge upstream..."
+          git checkout -b upstream-merge
+          git merge --no-edit openela/linux-4.14.y || {
+            echo "❌ Konflik terjadi saat merge. Silakan periksa manual."
+            exit 1
+          }
+
+          echo "🚀 Push hasil merge ke branch 'upstream-merge'..."
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+          git push --force origin upstream-merge
 
       - name: Run Build Script
         env:
@@ -98,16 +104,12 @@ jobs:
           TODO: ${{ inputs.TODO }}
         run: |
           echo "📡 Server Info"
-          echo "🏷️ Hostname: $(hostname)"
-          echo "🧠 CPU Info:"
+          hostname
           lscpu
-          echo "💾 Memory Info:"
           free -h
-          echo "🧱 Kernel Info:"
           uname -a
-          echo "📦 Disk Info:"
           df -h /
-
-          echo "⚙️ Starting build script..."
-          chmod a+x *.sh
+          
+          echo "⚙️ Menjalankan skrip build..."
+          chmod +x *.sh
           ./build.sh
