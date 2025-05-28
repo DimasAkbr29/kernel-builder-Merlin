@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 workdir=$(pwd)
 exec > >(tee $workdir/build.log) 2>&1
@@ -111,9 +110,6 @@ if [[ $KSU_SUSFS == "true" ]]; then
         fi
     fi
 fi
-
-curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next-susfs/kernel/setup.sh" | bash -s next-susfs
-
 
 cd $workdir/ksrc
 # set localversion
