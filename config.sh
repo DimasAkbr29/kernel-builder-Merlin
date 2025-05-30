@@ -10,8 +10,8 @@ TIMEZONE="Asia/Jakarta"
 #
 KERNEL_NAME="Phoneix"
 KERNEL_ARCH="arm64"
-KERNEL_REPO="https://github.com/DimasAkbr29/kernel_redmi_mt6768r"
-KERNEL_BRANCH="lancelot-r-oss"
+KERNEL_REPO="https://github.com/DimasAkbr29/android_kernel_xiaomi_mt6768_"
+KERNEL_BRANCH="Exation-Kernel"
 KERNEL_DEFCONFIG="merlin_defconfig"
 #
 ANYKERNEL_REPO="https://github.com/DimasAkbr29/AnyKernel"
