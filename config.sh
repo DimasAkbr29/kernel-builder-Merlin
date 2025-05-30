@@ -17,7 +17,7 @@ KERNEL_DEFCONFIG="merlin_defconfig"
 ANYKERNEL_REPO="https://github.com/DimasAkbr29/AnyKernel"
 ANYKERNEL_BRANCH="main"
 #
-CLANG_URL="$(./clang.sh rv)"
+CLANG_URL="$(./clang.sh aosp)"
 CLANG_BRANCH=""
 #
 ZIP_NAME="$KERNEL_NAME-KVER-CODENAME-VARIANT-BUILD_DATE.zip"
