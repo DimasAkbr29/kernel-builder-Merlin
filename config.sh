@@ -4,14 +4,14 @@
 DEVICE_CODENAME="merlin"
 DEVICE_MODEL="Redmi Note 9"
 #
-BUILD_USER="Dimz"
+BUILD_USER="Dimz Machine"
 BUILD_HOST="Phoneix"
 TIMEZONE="Asia/Jakarta"
 #
 KERNEL_NAME="Phoneix"
 KERNEL_ARCH="arm64"
-KERNEL_REPO="https://github.com/DimasAkbr29/android_kernel_xiaomi_mt6768p"
-KERNEL_BRANCH="Stable"
+KERNEL_REPO="https://github.com/DimasAkbr29/kernel_xiaomi_mt6768_Phoneix"
+KERNEL_BRANCH="phoneix"
 KERNEL_DEFCONFIG="merlin_defconfig"
 #
 ANYKERNEL_REPO="https://github.com/DimasAkbr29/AnyKernel"
