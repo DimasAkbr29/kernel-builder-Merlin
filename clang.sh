@@ -11,9 +11,11 @@ AOSP_ARCHIVE="https://android.googlesource.com/platform/prebuilts/clang/host/lin
 YUKI_REPO="https://api.github.com/repos/Klozz/Yuki_clang_releases/releases/latest"
 # lilium clang
 LILIUM_REPO="https://api.github.com/repos/liliumproject/clang/releases/latest"
+# zy cromer clang
+ZY_REPO="https://api.github.com/repos/ZyCromerZ/Clang/releases/latest"
 
 show_usage() {
-    CLANG_NAME="slim, rv, aosp, yuki, lilium"
+    CLANG_NAME="slim, rv, aosp, yuki, lilium, zy"
     echo "Usage: $0 <clang name>"
     echo "clang name: $CLANG_NAME"
 }
@@ -34,6 +36,9 @@ case "$1" in
     ;;
 "lilium")
     curl -s "$LILIUM_REPO" | grep "browser_download_url" | grep ".tar.gz" | cut -d '"' -f 4
+    ;;
+"zy")
+    curl -s "$ZY_REPO" | grep "browser_download_url" | grep ".tar.gz" | cut -d '"' -f 4
     ;;
 *)
     if [[ -z $1 ]]; then
