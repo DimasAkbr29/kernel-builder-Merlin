@@ -12,7 +12,7 @@ KERNEL_NAME="Phoneix"
 KERNEL_ARCH="arm64"
 KERNEL_REPO="https://github.com/DimasAkbr29/kernel_xiaomi_mt6768_Phoneix"
 KERNEL_BRANCH="phoneix"
-KERNEL_DEFCONFIG="merlin_defconfig"
+KERNEL_DEFCONFIG="merlin_miui_defconfig"
 #
 ANYKERNEL_REPO="https://github.com/DimasAkbr29/AnyKernel"
 ANYKERNEL_BRANCH="main"
