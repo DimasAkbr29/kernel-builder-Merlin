@@ -12,7 +12,7 @@ KERNEL_NAME="SentinelKernelBeta"
 KERNEL_ARCH="arm64"
 KERNEL_REPO="https://github.com/DimasAkbr29/android_kernel_xiaomi_mt6768p"
 KERNEL_BRANCH="stable"
-KERNEL_DEFCONFIG="merlin_miui_defconfig"
+KERNEL_DEFCONFIG="merlin_defconfig"
 #
 ANYKERNEL_REPO="https://github.com/DimasAkbr29/AnyKernel"
 ANYKERNEL_BRANCH="main"
