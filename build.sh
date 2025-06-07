@@ -132,12 +132,12 @@ export BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
 text=$(
     cat <<EOF
 *=== $KERNEL_NAME CI ===*
-🐧 *Linux Version*: \`$LINUX_VERSION\`
-📅 *Build Date*: \`$KBUILD_BUILD_TIMESTAMP\`
-📱 *Device*: \`$DEVICE_MODEL ($DEVICE_CODENAME)\`
-📛 *KernelSU*: \`${KSU}$([[ $KSU != "None" ]] && echo " | $KSU_VERSION")\`
-ඞ *SUSFS*: \`$([[ $KSU_SUSFS == "true" ]] && echo "$SUSFS_VERSION" || echo "None")\`
-🔰 *Compiler*: \`$COMPILER_STRING\`
+🐧 *Linux Kernel Version*: \`$LINUX_VERSION\`  
+📅 *Build Timestamp*: \`$KBUILD_BUILD_TIMESTAMP\`  
+📱 *Target Device*: \`$DEVICE_MODEL ($DEVICE_CODENAME)\`  
+🛡️ *KernelSUNext Support*: \`${KSU}$([[ $KSU != "None" ]] && echo " | Version: $KSU_VERSION")\`  
+📂 *SUSFS (Superuser FS)*: \`$([[ $KSU_SUSFS == "true" ]] && echo "$SUSFS_VERSION" || echo "Not Supported")\`  
+🧰 *Compiled With*: \`$COMPILER_STRING\`  
 EOF
 )
 MESSAGE_ID=$(send_msg "$text" 2>&1 | jq -r .result.message_id)
