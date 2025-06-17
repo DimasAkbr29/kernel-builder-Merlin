@@ -10,7 +10,7 @@ TIMEZONE="Asia/Jakarta"
 #
 KERNEL_NAME="[A13+]Phoneix-NextKernel"
 KERNEL_ARCH="arm64"
-KERNEL_REPO="https://github.com/DimzHereee/Kernel-merlinx"
+KERNEL_REPO="https://github.com/DimasAkbr29/kernel_xiaomi_mt6768m"
 KERNEL_BRANCH="A15"
 KERNEL_DEFCONFIG="merlin_defconfig"
 #
